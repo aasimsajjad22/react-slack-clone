@@ -12,7 +12,7 @@ class DirectMessages extends React.Component {
     userRef: firebase.database().ref("users"),
     connectedRef: firebase.database().ref(".info/connected"),
     presenceRef: firebase.database().ref("presence"),
-    activeChannel: ""
+    activeChannel: "",
   };
 
   componentDidMount() {
@@ -21,9 +21,19 @@ class DirectMessages extends React.Component {
     }
   }
 
-  addListeners = currentUserId => {
+  componentWillUnmount() {
+    this.removeListeners();
+  }
+
+  removeListeners = () => {
+    this.state.userRef.off();
+    this.state.presenceRef.off();
+    this.state.connectedRef.off();
+  };
+
+  addListeners = (currentUserId) => {
     let loadedUsers = [];
-    this.state.userRef.on("child_added", snap => {
+    this.state.userRef.on("child_added", (snap) => {
       if (currentUserId !== snap.key) {
         let user = snap.val();
         user["uid"] = snap.key;
@@ -33,11 +43,11 @@ class DirectMessages extends React.Component {
       }
     });
 
-    this.state.connectedRef.on("value", snap => {
+    this.state.connectedRef.on("value", (snap) => {
       if (snap.val() === true) {
         const ref = this.state.presenceRef.child(currentUserId);
         ref.set(true);
-        ref.onDisconnect().remove(err => {
+        ref.onDisconnect().remove((err) => {
           if (err !== null) {
             console.log(err);
           }
@@ -45,13 +55,13 @@ class DirectMessages extends React.Component {
       }
     });
 
-    this.state.presenceRef.on("child_added", snap => {
+    this.state.presenceRef.on("child_added", (snap) => {
       if (currentUserId !== snap.key) {
         this.addStatusToUser(snap.key);
       }
     });
 
-    this.state.presenceRef.on("child_removed", snap => {
+    this.state.presenceRef.on("child_removed", (snap) => {
       if (currentUserId !== snap.key) {
         this.addStatusToUser(snap.key, false);
       }
@@ -68,13 +78,13 @@ class DirectMessages extends React.Component {
     this.setState({ users: updatedUsers });
   };
 
-  isUserOnline = user => user.status === "online";
+  isUserOnline = (user) => user.status === "online";
 
-  changeChannel = user => {
+  changeChannel = (user) => {
     const channelId = this.getChannelId(user.uid);
     const channelData = {
       id: channelId,
-      name: user.name
+      name: user.name,
     };
 
     this.props.setCurrentChannel(channelData);
@@ -82,11 +92,11 @@ class DirectMessages extends React.Component {
     this.setActiveChannel(user.uid);
   };
 
-  setActiveChannel = userId => {
+  setActiveChannel = (userId) => {
     this.setState({ activeChannel: userId });
   };
 
-  getChannelId = userId => {
+  getChannelId = (userId) => {
     const currentUserId = this.state.user.uid;
     return userId < currentUserId
       ? `${userId}/${currentUserId}`
@@ -104,7 +114,7 @@ class DirectMessages extends React.Component {
           ({users.length})
         </Menu.Item>
         {/* users to send direct messages */}
-        {users.map(user => (
+        {users.map((user) => (
           <Menu.Item
             key={user.uid}
             active={user.uid === activeChannel}
